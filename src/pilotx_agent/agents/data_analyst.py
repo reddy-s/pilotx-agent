@@ -39,6 +39,7 @@ class DataAnalyst(AbstractAgent):
     def _after_tool_callback(self, tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext,
                              tool_response: dict) -> Optional[dict]:
         logger.info(f"DataAnalyst: after_tool_callback invoked with tool_response: {tool_response}")
+        # TODO: Structure the Output
         return json.loads(tool_response)
 
     def _after_model_callback(
