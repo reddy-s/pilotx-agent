@@ -1,0 +1,24 @@
+service: include('ServiceConfig')
+---
+ServiceConfig:
+  dataMCP: str()
+  globalInstruction: str()
+  firebase: include('FirebaseConfig')
+  toolbox: include('ToolboxConfig')
+  agents: map(include('AgentConfig'), key=str())
+---
+AgentConfig:
+  name: str()
+  description: str()
+  instruction: str()
+  modelName: str()
+  outputKey: str(required=False)
+  baseUrl: str(required=False)
+---
+ToolboxConfig:
+  uri: str()
+  toolsetId: str()
+---
+FirebaseConfig:
+  project: str()
+  database: str()
