@@ -25,12 +25,26 @@ class VisualizationResponse(BaseModel):
         default_factory=dict,
         description="Columnar dataset: {column: [values...]}. All arrays equal length. Max 15 rows.",
     )
-
-    # Used when visualizationType='text'
-    text: Optional[str] = Field(
+    explanation: str = Field(
         default=None,
-        description="Plain text/markdown to display when visualizationType='text'.",
+        description="Textual explanation or insights about the visualization.",
     )
+
+
+class DataAnalystResponse(BaseModel):
+    data: List[VisualizationResponse] = Field(
+        ..., description="List of visualizations."
+    )
+
+
+class FAQ(BaseModel):
+    question: str = Field(..., description="Question")
+    netInformationGainScore: float = Field(..., description="Estimated Net Information Gain Score if the user asks the question. RANGE: 0.0 - 5.0")
+
+
+class FAQProposerResponse(BaseModel):
+    faqs: List[FAQ] = Field(..., description="List of FAQs")
+
 
 
 class TokenUsage(BaseModel):

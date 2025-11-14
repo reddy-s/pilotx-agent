@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 class AgentType(Enum):
     DataAnalyst = "DataAnalyst"
+    BusinessAnalyst = "BusinessAnalyst"
+    FAQProposer = "FAQProposer"
 
 
 class AgentConfig(BaseModel):
