@@ -1,6 +1,6 @@
-from .agents import WorkflowAgent
+from .agents import Orchestrator
 from .agents.entities import SessionType
 
 
-insights_workflow = WorkflowAgent(session_type=SessionType.InMemory)
-root_agent = insights_workflow.agent
+orchestrator = Orchestrator(session_type=SessionType.InMemory)
+root_agent = orchestrator.agent

@@ -8,6 +8,7 @@ class AgentType(Enum):
     DataAnalyst = "DataAnalyst"
     BusinessAnalyst = "BusinessAnalyst"
     FAQProposer = "FAQProposer"
+    Orchestrator = "Orchestrator"
 
 
 class AgentConfig(BaseModel):

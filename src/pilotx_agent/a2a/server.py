@@ -12,7 +12,7 @@ from a2a.types import (
     AgentSkill,
 )
 
-from ..agent import WorkflowAgent
+from ..agent import Orchestrator
 from ..agents.entities import SessionType
 from ..executors.agent_executor import PilotXAgentExecutor
 
@@ -72,7 +72,7 @@ def make_pilotx_a2a_server() -> uvicorn.Server:
 
     request_handler = DefaultRequestHandler(
         agent_executor=PilotXAgentExecutor(
-            agent=WorkflowAgent(session_type=SessionType.Firestore),
+            agent=Orchestrator(session_type=SessionType.Firestore),
             streaming=True,
         ),
         task_store=InMemoryTaskStore(),

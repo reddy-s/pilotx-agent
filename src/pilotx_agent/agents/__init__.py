@@ -1,7 +1,8 @@
 from .data_analyst import DataAnalyst
 from .business_analyst import BusinessAnalyst
 from .faq_proposer import FAQProposer
-from .workflow import WorkflowAgent
+from .orchestrator import Orchestrator
+from .workflow import InsightsWorkflowAgent
 
 
-__all__ = ["DataAnalyst", "BusinessAnalyst", "FAQProposer", "WorkflowAgent"]
+__all__ = ["DataAnalyst", "BusinessAnalyst", "FAQProposer", "Orchestrator", "InsightsWorkflowAgent"]

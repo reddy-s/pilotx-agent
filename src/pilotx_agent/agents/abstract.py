@@ -211,7 +211,7 @@ class AbstractAgent(ABC):
         output_schema: type[BaseModel] = None,
         global_instruction: str = None,
         include_memory_tool: bool = False,
-        sub_agents: list[Agent] | None = None,
+        sub_agents: list[Agent | SequentialAgent | ParallelAgent | LoopAgent] | None = None,
         session_type: SessionType = SessionType.Database,
         plugins: Optional[List[BasePlugin]] = None,
     ):

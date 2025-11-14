@@ -5,7 +5,7 @@ from .entities.config import SessionType
 from .faq_proposer import FAQProposer
 
 
-class WorkflowAgent(AbstractSequentialAgent):
+class InsightsWorkflowAgent(AbstractSequentialAgent):
     def __init__(self, session_type: SessionType = SessionType.InMemory) -> None:
         super().__init__(
             name="InsightsWorkflow",
