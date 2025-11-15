@@ -13,7 +13,7 @@ class InsightsWorkflowAgent(AbstractSequentialAgent):
             sub_agents=[
                 DataAnalyst().agent,
                 BusinessAnalyst().agent,
-                FAQProposer().agent
+                FAQProposer().agent,
             ],
-            session_type=session_type
+            session_type=session_type,
         )

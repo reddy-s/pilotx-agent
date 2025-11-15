@@ -1,4 +1,12 @@
-from .completions import ToolResponse, ErrorResponse, VisualizationResponse, TokenUsage, DataAnalystResponse, FAQ, FAQProposerResponse
+from .completions import (
+    ToolResponse,
+    ErrorResponse,
+    VisualizationResponse,
+    TokenUsage,
+    DataAnalystResponse,
+    FAQ,
+    FAQProposerResponse,
+)
 from .config import AgentConfig, ContentRoles, SessionType, AgentType, ResponseTypes
 
 

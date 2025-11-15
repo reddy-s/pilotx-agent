@@ -24,7 +24,7 @@ class FAQProposer(AbstractAgent):
             config=AgentConfig(**base_agent_config),
             global_instruction=service_config.globalInstruction,
             session_type=session_type,
-            output_schema=FAQProposerResponse
+            output_schema=FAQProposerResponse,
         )
 
     def _after_model_callback(

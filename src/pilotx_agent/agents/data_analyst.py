@@ -10,7 +10,13 @@ from google.adk.tools import BaseTool, ToolContext
 from toolbox_core import ToolboxSyncClient
 
 from .abstract import AbstractAgent
-from .entities import AgentConfig, AgentType, SessionType, ToolResponse, DataAnalystResponse
+from .entities import (
+    AgentConfig,
+    AgentType,
+    SessionType,
+    ToolResponse,
+    DataAnalystResponse,
+)
 from .plugins import JailbreakDetector
 from .utils import TokenUsage
 from ..config import ServiceConfig
@@ -37,9 +43,16 @@ class DataAnalyst(AbstractAgent):
             output_schema=DataAnalystResponse,
         )
 
-    def _after_tool_callback(self, tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext,
-                             tool_response: dict) -> Optional[dict]:
-        logger.info(f"DataAnalyst: after_tool_callback invoked with tool_response: {tool_response}")
+    def _after_tool_callback(
+        self,
+        tool: BaseTool,
+        args: Dict[str, Any],
+        tool_context: ToolContext,
+        tool_response: dict,
+    ) -> Optional[dict]:
+        logger.info(
+            f"DataAnalyst: after_tool_callback invoked with tool_response: {tool_response}"
+        )
         # TODO: Structure the Output
         # return json.loads(tool_response)
         return tool_response

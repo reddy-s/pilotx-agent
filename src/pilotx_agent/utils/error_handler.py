@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=Callable[..., dict[str, Any]])
 
 
-def handle_tool_error(tool_name: str, error: Exception | str, detail: str | None = None) -> dict[str, Any]:
+def handle_tool_error(
+    tool_name: str, error: Exception | str, detail: str | None = None
+) -> dict[str, Any]:
 
     if isinstance(error, Exception):
         error_name = type(error).__name__
@@ -28,7 +30,9 @@ def handle_tool_error(tool_name: str, error: Exception | str, detail: str | None
     }
 
 
-def handle_tool_error_with_message(error_name: str, error_detail: str, tool_name: str) -> Dict[str, Any]:
+def handle_tool_error_with_message(
+    error_name: str, error_detail: str, tool_name: str
+) -> Dict[str, Any]:
     """
     Handles tool errors by logging them and returning a standardized error response.
     """
@@ -57,7 +61,9 @@ def wrap_tool_with_retry_handling(tool_name: str):
         def _handle_exception(e: Exception) -> dict[str, Any]:
             if isinstance(e, RetryError):
                 last_exc = e.last_attempt.exception()
-                logger.error(f"[tool: {tool_name}] Retry failed after all attempts: {last_exc}")
+                logger.error(
+                    f"[tool: {tool_name}] Retry failed after all attempts: {last_exc}"
+                )
                 return handle_tool_error(tool_name, last_exc)
             else:
                 return handle_tool_error(tool_name, e)

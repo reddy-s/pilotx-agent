@@ -24,7 +24,7 @@ def validate_env_variables():
         "LOG_CONFIG_PATH",
         "AGENT_HOST",
         "GOOGLE_APPLICATION_CREDENTIALS",
-        "TAVILY_API_KEY"
+        "TAVILY_API_KEY",
     ]
 
     optional_env_vars = ["DEV_MODE", "STATE_PATH"]

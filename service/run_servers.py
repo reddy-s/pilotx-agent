@@ -61,7 +61,9 @@ def run_servers_in_threads(
         logging.info(
             f"Starting {name} on http://{server.config.host}:{server.config.port}"
         )
-        thread = threading.Thread(target=lambda s=server: asyncio.run(s.serve()), name=name)
+        thread = threading.Thread(
+            target=lambda s=server: asyncio.run(s.serve()), name=name
+        )
         thread.start()
         threads.append(thread)
 

@@ -39,12 +39,14 @@ class DataAnalystResponse(BaseModel):
 
 class FAQ(BaseModel):
     question: str = Field(..., description="Question")
-    netInformationGainScore: float = Field(..., description="Estimated Net Information Gain Score if the user asks the question. RANGE: 0.0 - 5.0")
+    netInformationGainScore: float = Field(
+        ...,
+        description="Estimated Net Information Gain Score if the user asks the question. RANGE: 0.0 - 5.0",
+    )
 
 
 class FAQProposerResponse(BaseModel):
     faqs: List[FAQ] = Field(..., description="List of FAQs")
-
 
 
 class TokenUsage(BaseModel):

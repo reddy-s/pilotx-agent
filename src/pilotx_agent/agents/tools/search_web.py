@@ -47,4 +47,6 @@ def search_web_for_latest_information(query: str, max_results: int = 3) -> dict:
     return {"answer": response.get("answer", None), **results[0]}
 
 
-func_search_web_for_latest_information = FunctionTool(func=search_web_for_latest_information)
+func_search_web_for_latest_information = FunctionTool(
+    func=search_web_for_latest_information
+)

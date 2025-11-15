@@ -23,6 +23,7 @@ dependencies = [
 
 [project.scripts]
 pilotx-agent = "pilotx_agent:main"
+evaluate-pilotx = "evals:main"
 
 [build-system]
 requires = ["hatchling"]

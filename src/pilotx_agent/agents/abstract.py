@@ -94,7 +94,6 @@ class AgentRunner:
         self, prompt: str, user_id: str, session_id: str
     ) -> AsyncGenerator[dict[str, Any], None]:
         user_content = Content(role=ContentRoles.User.value, parts=[Part(text=prompt)])
-        final_response_content = "No final response received."
         streaming_mode = RunConfig(streaming_mode=StreamingMode.SSE)
 
         # You need a run config set to streaming mode to stream
@@ -106,7 +105,6 @@ class AgentRunner:
         ):
             if event.content and event.content.parts:
                 for part in event.content.parts:
-                    # Handle function calls
                     if hasattr(part, "function_call") and part.function_call:
                         yield {
                             "type": "function_call",
@@ -153,6 +151,91 @@ class AgentRunner:
                     "function_name": None,
                     "state": current_state,
                 }
+
+    async def invoke(
+        self, prompt: str, user_id: str, session_id: str = None
+    ) -> List[dict]:
+        # ensure session exists
+        await self.get_or_create_session(user_id=user_id, app_name=self.runner.app_name, session_id=session_id)
+        res = []
+        user_content = Content(role=ContentRoles.User.value, parts=[Part(text=prompt)])
+        async for event in self.runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=user_content,
+        ):
+            if event.content and event.content.parts:
+                for part in event.content.parts:
+                    if hasattr(part, "function_call") and part.function_call:
+                        logger.info(f"Function call: {part.function_call}")
+                        res.append(
+                            {
+                                "type": "function_call",
+                                "args": part.function_call.args,
+                                "content": f"Running '{part.function_call.name}'...",
+                                "function_name": part.function_call.name,
+                                "done": False,
+                            }
+                        )
+                    elif hasattr(part, "function_response") and part.function_response:
+                        logger.info(f"Function response: {part.function_response}")
+                        res.append(
+                            {
+                                "type": "function_response",
+                                "content": f"Finished running '{part.function_response.name}'.",
+                                "tool_response": part.function_response.response,
+                                "function_name": part.function_response.name,
+                                "done": False,
+                            }
+                        )
+
+            if event.is_final_response() and event.content and event.content.parts:
+                final_response_content = ""
+                if event.content and event.content.parts:
+                    final_response_content = "".join(
+                        [p.text for p in event.content.parts if p.text]
+                    )
+                current_state = await self.get_current_session_state(
+                    app_name=self.runner.app_name,
+                    user_id=user_id,
+                    session_id=session_id,
+                )
+                logger.info(f"Final response: {final_response_content}")
+                res.append(
+                    {
+                        "done": True,
+                        "type": "text",
+                        "content": final_response_content,
+                        "function_name": None,
+                        "state": current_state,
+                    }
+                )
+        return res
+
+    async def get_or_create_session(
+        self, app_name: str, user_id: str, session_id: str
+    ) -> Session:
+        """
+        Retrieves an existing session or creates a new one if no session exists for the
+        provided app_name, user_id, and session_id combination.
+
+        :param app_name: The name of the application associated with the session.
+        :type app_name: str
+        :param user_id: The unique identifier for the user of the session.
+        :type user_id: str
+        :param session_id: The unique identifier for the session.
+        :type session_id: str
+        :return: An existing or newly created session object.
+        :rtype: Session
+        """
+        session = await self.session.get_session(
+            app_name=app_name, user_id=user_id, session_id=session_id
+        )
+        if not session:
+            session = await self.session.create_session(
+                app_name=app_name, user_id=user_id, session_id=session_id
+            )
+        return session
 
     async def get_current_session_state(
         self, app_name: str, user_id: str, session_id: str
@@ -211,7 +294,9 @@ class AbstractAgent(ABC):
         output_schema: type[BaseModel] = None,
         global_instruction: str = None,
         include_memory_tool: bool = False,
-        sub_agents: list[Agent | SequentialAgent | ParallelAgent | LoopAgent] | None = None,
+        sub_agents: (
+            list[Agent | SequentialAgent | ParallelAgent | LoopAgent] | None
+        ) = None,
         session_type: SessionType = SessionType.Database,
         plugins: Optional[List[BasePlugin]] = None,
     ):
@@ -415,6 +500,7 @@ class AbstractSequentialAgent(ABC):
         description: str,
         sub_agents: list[Agent | AbstractAgent],
         session_type: SessionType = SessionType.InMemory,
+        plugins: Optional[List[BasePlugin]] = None,
     ) -> None:
         self._session_type = session_type
         self._agent = SequentialAgent(
@@ -422,6 +508,7 @@ class AbstractSequentialAgent(ABC):
             description=description,
             sub_agents=sub_agents,
         )
+        self._plugins = plugins
 
     @property
     def agent(self) -> SequentialAgent:
@@ -452,7 +539,7 @@ class AbstractSequentialAgent(ABC):
         """
         if self._runner is None:
             self._runner = AgentRunner(
-                agent=self._agent, session_type=self._session_type
+                agent=self._agent, session_type=self._session_type, plugins=self._plugins
             )
         return self._runner
 
@@ -481,7 +568,9 @@ class AbstractLoopAgent(ABC):
         name: str,
         description: str,
         sub_agents: list[Agent],
+        session_type: SessionType = SessionType.InMemory,
         max_iterations: int = 3,
+        plugins: Optional[List[BasePlugin]] = None,
     ) -> None:
         """
         Initializes an instance of the LoopAgent wrapper class with the specified
@@ -497,6 +586,8 @@ class AbstractLoopAgent(ABC):
             LoopAgent. Defaults to 3.
         :type max_iterations: int
         """
+        self._plugins = plugins
+        self._session_type = session_type
         self._agent = LoopAgent(
             name=name,
             description=description,
@@ -514,6 +605,24 @@ class AbstractLoopAgent(ABC):
         :rtype: LoopAgent
         """
         return self._agent
+
+    @property
+    def runner(self) -> AgentRunner:
+        """
+        Provides access to the AgentRunner instance associated with the current agent. The
+        property initializes the AgentRunner if it has not been created already, using the
+        agent and session type provided during the creation of the instance.
+
+        :rtype: AgentRunner
+        :return: Returns the AgentRunner instance associated with the current agent.
+        """
+        if self._runner is None:
+            self._runner = AgentRunner(
+                agent=self._agent,
+                session_type=self._session_type,
+                plugins=self._plugins,
+            )
+        return self._runner
 
 
 class AbstractParallelAgent(ABC):
@@ -546,8 +655,10 @@ class AbstractParallelAgent(ABC):
         description: str,
         sub_agents: list[Agent],
         session_type: SessionType = SessionType.InMemory,
+        plugins: Optional[List[BasePlugin]] = None,
     ) -> None:
         self._session_type = session_type
+        self._plugins = plugins
         self._agent = ParallelAgent(
             name=name,
             description=description,
@@ -562,6 +673,6 @@ class AbstractParallelAgent(ABC):
     def runner(self) -> AgentRunner:
         if self._runner is None:
             self._runner = AgentRunner(
-                agent=self._agent, session_type=self._session_type
+                agent=self._agent, session_type=self._session_type, plugins=self._plugins
             )
         return self._runner

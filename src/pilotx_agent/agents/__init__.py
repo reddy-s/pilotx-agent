@@ -5,4 +5,10 @@ from .orchestrator import Orchestrator
 from .workflow import InsightsWorkflowAgent
 
 
-__all__ = ["DataAnalyst", "BusinessAnalyst", "FAQProposer", "Orchestrator", "InsightsWorkflowAgent"]
+__all__ = [
+    "DataAnalyst",
+    "BusinessAnalyst",
+    "FAQProposer",
+    "Orchestrator",
+    "InsightsWorkflowAgent",
+]
