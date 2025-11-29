@@ -16,7 +16,6 @@ from google.adk.sessions.base_session_service import (
     ListSessionsResponse,
 )
 from google.adk.sessions.session import Session
-from google.adk.sessions.vertex_ai_session_service import _session_util
 from google.cloud.firestore_v1 import AsyncClient
 from google.cloud.firestore_v1.base_query import FieldFilter
 from typing_extensions import override
@@ -159,8 +158,10 @@ class FirestoreSessionService(BaseSessionService):
 
     @override
     async def list_sessions(
-        self, *, app_name: str, user_id: str
+        self, *, app_name: str, user_id: Optional[str] = None
     ) -> ListSessionsResponse:
+        if not user_id:
+            raise ValueError("user_id must be provided to list sessions.")
         q = self.col_sessions.where(
             filter=FieldFilter("app_name", "==", app_name)
         ).where(filter=FieldFilter("user_id", "==", user_id))
@@ -272,14 +273,12 @@ class FirestoreSessionService(BaseSessionService):
             branch=d.get("branch"),
             actions=actions_obj or EventActions(),
             timestamp=(d.get("timestamp") or _now_utc()).timestamp(),
-            content=_session_util.decode_content(d.get("content")),
+            content=d.get("content"),
             long_running_tool_ids=set(d.get("long_running_tool_ids") or []),
             partial=d.get("partial"),
             turn_complete=d.get("turn_complete"),
             error_code=d.get("error_code"),
             error_message=d.get("error_message"),
             interrupted=d.get("interrupted"),
-            grounding_metadata=_session_util.decode_grounding_metadata(
-                d.get("grounding_metadata")
-            ),
+            grounding_metadata=d.get("grounding_metadata"),
         )
