@@ -22,3 +22,4 @@ ToolboxConfig:
 FirebaseConfig:
   project: str()
   database: str()
+  collection: str()

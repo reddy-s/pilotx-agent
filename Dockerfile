@@ -25,13 +25,13 @@ COPY service /app/service
 COPY src/** /app/src/
 
 ENV CONFIG_SCHEMA_PATH=/app/resources/config-schema.yaml \
-    CONFIG_PATH=/app/resources/config/staging.yaml \
+    CONFIG_PATH=/app/resources/config/config.yaml \
     LOG_CONFIG_PATH=/app/resources/logging.yaml \
     RESPONSE_TEMPLATE_FOLDER=/app/resources/templates \
     CACHE_DIR=/app/data/cache \
     LOG_LEVEL=INFO \
     BUILD_VERSION=${TAG} \
-    POI_AGENT_HOST=http://0.0.0.0:9999 \
+    AGENT_HOST=http://0.0.0.0:9999 \
     DEV_MODE=false \
     STATE_PATH=/app/data/db
 

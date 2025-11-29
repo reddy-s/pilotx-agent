@@ -3,6 +3,7 @@ service:
   firebase:
     project: hobu-staging
     database: staging-firebase
+    collection: tsessions
   globalInstruction: Explore data and find insights from data
   toolbox:
     uri: http://localhost:5010
