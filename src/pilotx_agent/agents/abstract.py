@@ -1,5 +1,7 @@
 import logging
 import os
+import mlflow
+
 from abc import ABC
 from typing import Optional, Dict, Any, AsyncGenerator, List
 
@@ -24,6 +26,7 @@ from google.adk.tools import load_memory, FunctionTool
 from google.adk.tools.base_tool import BaseTool
 from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Content, Part
+from mlflow.entities import SpanType
 from pydantic import BaseModel
 
 from .entities import AgentConfig, ContentRoles, SessionType, AgentType
@@ -93,6 +96,11 @@ class AgentRunner:
     async def stream(
         self, prompt: str, user_id: str, session_id: str
     ) -> AsyncGenerator[dict[str, Any], None]:
+        # ensure session exists
+        await self.get_or_create_session(
+            user_id=user_id, app_name=self.runner.app_name, session_id=session_id
+        )
+
         user_content = Content(role=ContentRoles.User.value, parts=[Part(text=prompt)])
         streaming_mode = RunConfig(streaming_mode=StreamingMode.SSE)
 
@@ -152,6 +160,7 @@ class AgentRunner:
                     "state": current_state,
                 }
 
+    @mlflow.trace(span_type=SpanType.AGENT, name="agent_invoke")
     async def invoke(
         self, prompt: str, user_id: str, session_id: str = None
     ) -> List[dict]:

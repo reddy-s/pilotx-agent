@@ -2,7 +2,7 @@ import logging
 import os
 from abc import ABC
 from functools import partial
-from typing import Any, List, Union
+from typing import Any, List, Union, Tuple
 from uuid import uuid4
 
 import mlflow
@@ -27,10 +27,10 @@ class AgentEvaluator:
     def __init__(
         self,
         instance: Union[
-            AbstractAgent
-            | AbstractSequentialAgent
-            | AbstractParallelAgent
-            | AbstractLoopAgent
+            "AbstractAgent",
+            "AbstractSequentialAgent",
+            "AbstractParallelAgent",
+            "AbstractLoopAgent",
         ],
         experiment: str = "pilotx",
     ):
@@ -46,36 +46,107 @@ class AgentEvaluator:
                 "MLFLOW_TRACKING_URI must be set, it must point to a valid MLflow 3.0 tracking server."
             )
 
-    def run_eval(self, scorers: List[Union[Scorer, Any]], dataset: list[dict]) -> EvaluationResult:
-        mlflow.openai.autolog()
-
+    def _get_or_create_experiment(self) -> str:
         mlflow.set_tracking_uri(self.tracking_uri)
         mlflow.set_experiment(self.experiment)
 
-        run_id = f"{self.instance.config.name}_{str(uuid4())}"
-        logging.info(
-            f"Generated run ID: {run_id} for agent: {self.instance.config.name}. Test set size: {len(dataset)}"
+        exp = mlflow.get_experiment_by_name(self.experiment)
+        if exp is None:
+            raise RuntimeError(
+                f"Failed to get or create MLflow experiment '{self.experiment}'"
+            )
+
+        logger.info(
+            "Using MLflow experiment '%s' (id=%s, artifact_location=%s)",
+            exp.name,
+            exp.experiment_id,
+            exp.artifact_location,
+        )
+        return exp.experiment_id
+
+    def _get_or_create_run(self, run_name: str, tag_name: str = "agentEval") -> Tuple[str, str]:
+        experiment_id = self._get_or_create_experiment()
+
+        # Look for an existing run with this logical ID
+        existing = mlflow.search_runs(
+            experiment_ids=[experiment_id],
+            filter_string=f"tags.{tag_name} = '{run_name}'",
+            max_results=1,
         )
 
-        try:
-            all_results = mlflow.genai.evaluate(
-                data=dataset,
-                predict_fn=partial(
-                    run_agent,
-                    instance=self.instance,
-                    user_id="eval-user",
-                    session_id=str(uuid4()),
-                ),
-                scorers=scorers,
+        if len(existing) > 0:
+            # Run exists → just return its ID, do NOT start it here
+            run_id = existing.iloc[0].run_id
+        else:
+            # No run -> create a new one and tag it with the logical ID,
+            # then end it so it's not active anymore.
+            with mlflow.start_run(experiment_id=experiment_id, run_name=run_name) as run:
+                mlflow.set_tag(tag_name, run_name)
+                run_id = run.info.run_id
+
+            # at this point the run is ENDED; we can reopen it later by run_id
+
+        return experiment_id, run_id
+
+    def run_eval(
+        self,
+        scorers: List[Scorer],
+        dataset: list[dict],
+    ) -> EvaluationResult:
+        # Enable OpenAI / GenAI autologging
+        mlflow.openai.autolog()
+
+        run_name = f"{self.instance.config.name}-eval"
+        experiment_id, run_id = self._get_or_create_run(run_name=run_name)
+        logger.info(
+            f"Using MLflow experiment_id={experiment_id}, run_id={run_id} for agent evaluation"
+        )
+
+        # Now we start the run exactly once and keep it active during evaluation
+        with mlflow.start_run(
+            run_id=run_id,
+            experiment_id=experiment_id,
+        ) as run:
+            logger.info(
+                "Started MLflow run %s for agent '%s' in experiment '%s' "
+                "(experiment_id=%s). Test set size: %d",
+                run.info.run_id,
+                self.instance.config.name,
+                self.experiment,
+                experiment_id,
+                len(dataset),
             )
 
-            logger.info(
-                f"Agent evaluation completed successfully for agent: {self.instance.config.name}"
-            )
-            return all_results
-        except Exception as e:
-            logging.error(f"Campaign Agent evaluation failed: {e}")
-            raise
+            try:
+                all_results = mlflow.genai.evaluate(
+                    data=dataset,
+                    predict_fn=partial(
+                        run_agent,
+                        instance=self.instance,
+                        user_id="eval-user",
+                        session_id=str(uuid4()),
+                    ),
+                    scorers=scorers,
+                )
+
+                eval_run_id = getattr(all_results, "run_id", run_id)
+
+                logger.info(
+                    "Agent evaluation completed successfully for agent '%s'. "
+                    "Evaluation run_id=%s",
+                    self.instance.config.name,
+                    eval_run_id,
+                )
+                return all_results
+
+            except Exception as e:
+                logger.error(
+                    "Campaign Agent evaluation failed for agent '%s' in run %s: %s",
+                    self.instance.config.name,
+                    run_id,
+                    e,
+                )
+                raise
 
 
 class AbstractEvaluationRunner(ABC):

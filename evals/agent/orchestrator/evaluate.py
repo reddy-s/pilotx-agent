@@ -1,11 +1,11 @@
 from typing import List, Union
 
 from mlflow.genai import Scorer
-from mlflow.genai.scorers import Guidelines
+from mlflow.genai.scorers import Guidelines, Correctness
 
 from pilotx_agent.agents import Orchestrator
 
-from ..commons import AbstractEvaluationRunner
+from ..commons import AbstractEvaluationRunner, UsesCorrectTools
 
 
 class OrchestratorEvaluation(AbstractEvaluationRunner):
@@ -17,29 +17,26 @@ class OrchestratorEvaluation(AbstractEvaluationRunner):
 
     def get_scorers(self) -> List[Union[Guidelines, Scorer]]:
         scorers = [
-            Guidelines(
-                name="english",
-                guidelines=["The response must be in English"],
-            ),
+            Correctness(),
             Guidelines(
                 name="clarify",
                 guidelines=["The response must be clear, coherent, and concise"],
             ),
+            UsesCorrectTools(),
         ]
         return scorers
 
     def get_dataset(self) -> list[dict]:
         data = [
             {
-                "inputs": {"prompt": "What is the total head count for the Transportation Segment?"},
+                "inputs": {
+                    "prompt": "What is the total head count for the Transportation Segment?"
+                },
                 "expectations": {
                     "expected_facts": [
-                        "Orchestrator hands it over to the Insights Generation Workflow",
-                        "execute_sql_tool is used with sql query",
-                        "Response returned by the tool helps answer the question",
-                        "Agent responds back with insights"
+                        "Transportation segment is 1,056 distinct personnel",
                     ]
-                }
+                },
             }
         ]
         return data

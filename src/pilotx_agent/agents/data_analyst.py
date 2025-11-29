@@ -18,7 +18,7 @@ from .entities import (
     DataAnalystResponse,
 )
 from .plugins import JailbreakDetector
-from .utils import TokenUsage
+from .utils import TokenUsage, MlflowTracedSyncTool
 from ..config import ServiceConfig
 
 logger = logging.getLogger(__name__)
@@ -33,11 +33,13 @@ class DataAnalyst(AbstractAgent):
         toolbox = ToolboxSyncClient(toolbox_config.get("uri"))
         toolbox_tools = toolbox.load_toolset(toolbox_config.get("toolsetId"))
 
+        traced_tools = [MlflowTracedSyncTool(t) for t in toolbox_tools]
+
         super().__init__(
             agent_type=AgentType.DataAnalyst,
             config=AgentConfig(**base_agent_config),
             global_instruction=service_config.globalInstruction,
-            tools=[*toolbox_tools],
+            tools=[*traced_tools],
             session_type=session_type,
             plugins=[JailbreakDetector()],
             output_schema=DataAnalystResponse,
