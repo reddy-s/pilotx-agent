@@ -25,7 +25,7 @@ COPY service /app/service
 COPY src/** /app/src/
 
 ENV CONFIG_SCHEMA_PATH=/app/resources/config-schema.yaml \
-    CONFIG_PATH=/app/resources/config/config.yaml \
+    CONFIG_PATH=/app/resources/config/staging.yaml \
     LOG_CONFIG_PATH=/app/resources/logging.yaml \
     RESPONSE_TEMPLATE_FOLDER=/app/resources/templates \
     CACHE_DIR=/app/data/cache \
