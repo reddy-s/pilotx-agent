@@ -99,10 +99,11 @@ class AgentRunner:
     ) -> AsyncGenerator[dict[str, Any], None]:
         # ensure session exists
         await self.get_or_create_session(
-            user_id=user_id, app_name=self.runner.app_name, session_id=session_id
+            user_id=user_id, app_name=self.runner.app_name, session_id=session_id, user_prompt=prompt
         )
 
         user_content = Content(role=ContentRoles.User.value, parts=[Part(text=prompt)])
+
         streaming_mode = RunConfig(streaming_mode=StreamingMode.SSE)
 
         # You need a run config set to streaming mode to stream
@@ -175,7 +176,7 @@ class AgentRunner:
         self, prompt: str, user_id: str, session_id: str = None
     ) -> List[dict]:
         # ensure session exists
-        await self.get_or_create_session(user_id=user_id, app_name=self.runner.app_name, session_id=session_id)
+        await self.get_or_create_session(user_id=user_id, app_name=self.runner.app_name, session_id=session_id, user_prompt=prompt)
         res = []
         user_content = Content(role=ContentRoles.User.value, parts=[Part(text=prompt)])
         async for event in self.runner.run_async(
@@ -232,19 +233,21 @@ class AgentRunner:
         return res
 
     async def get_or_create_session(
-        self, app_name: str, user_id: str, session_id: str
+        self, app_name: str, user_id: str, session_id: str, user_prompt: str = "New Conversation"
     ) -> Session:
         """
-        Retrieves an existing session or creates a new one if no session exists for the
-        provided app_name, user_id, and session_id combination.
+        Retrieves an existing session or creates a new one if it does not exist. If the session is new,
+        it initializes the session state with a title and a turn counter.
 
         :param app_name: The name of the application associated with the session.
         :type app_name: str
-        :param user_id: The unique identifier for the user of the session.
+        :param user_id: The unique identifier for the user.
         :type user_id: str
         :param session_id: The unique identifier for the session.
         :type session_id: str
-        :return: An existing or newly created session object.
+        :param user_prompt: The initial prompt for the user's conversation. Defaults to "New Conversation".
+        :type user_prompt: str, optional
+        :return: The retrieved or newly created session object.
         :rtype: Session
         """
         session = await self.session.get_session(
@@ -252,7 +255,7 @@ class AgentRunner:
         )
         if not session:
             session = await self.session.create_session(
-                app_name=app_name, user_id=user_id, session_id=session_id
+                app_name=app_name, user_id=user_id, session_id=session_id, state={"conversationTitle": user_prompt, "turn": 0}
             )
         return session
 

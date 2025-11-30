@@ -108,9 +108,7 @@ class FirestoreSessionService(BaseSessionService):
         doc_ref = self.col_sessions.document(f"{app_name}:{user_id}:{session_id}")
         snap = await doc_ref.get()
         if not snap.exists:
-            return await self.create_session(
-                app_name=app_name, user_id=user_id, session_id=session_id
-            )
+            return None
 
         data = snap.to_dict() or {}
         update_ts = data.get("update_time", _now_utc()).timestamp()
