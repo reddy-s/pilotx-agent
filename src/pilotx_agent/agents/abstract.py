@@ -1,6 +1,7 @@
 import logging
 import os
 import mlflow
+import json
 
 from abc import ABC
 from typing import Optional, Dict, Any, AsyncGenerator, List
@@ -115,48 +116,57 @@ class AgentRunner:
                 for part in event.content.parts:
                     if hasattr(part, "function_call") and part.function_call:
                         yield {
+                            "agent": event.author,
                             "type": "function_call",
-                            "args": part.function_call.args,
                             "content": f"Running '{part.function_call.name}'...",
                             "function_name": part.function_call.name,
-                            "done": False,
+                            "lastResponse": False,
                         }
 
                     # Handle function responses
                     elif hasattr(part, "function_response") and part.function_response:
                         yield {
+                            "agent": event.author,
                             "type": "function_response",
                             "content": f"Finished running '{part.function_response.name}'.",
-                            "tool_response": part.function_response.response,
                             "function_name": part.function_response.name,
-                            "done": False,
+                            "lastResponse": False,
                         }
 
                     # Handle regular text content (streaming tokens)
                     elif hasattr(part, "text") and part.text and event.partial:
                         yield {
+                            "agent": event.author,
                             "type": "text",
                             "content": part.text,
                             "function_name": None,
-                            "done": False,
+                            "lastResponse": False,
                         }
 
             if event.is_final_response() and event.content and event.content.parts:
-                final_response_content = ""
-                if event.content and event.content.parts:
-                    final_response_content = "".join(
-                        [p.text for p in event.content.parts if p.text]
-                    )
                 current_state = await self.get_current_session_state(
                     app_name=self.runner.app_name,
                     user_id=user_id,
                     session_id=session_id,
                 )
+
+                final_response_content = None
+                response_type = "text"
+                if event.content and event.content.parts:
+                    try:
+                        final_response_content = json.loads(event.content.parts[0].text)
+                        response_type = "json"
+                    except json.JSONDecodeError as e:
+                        final_response_content = "".join(
+                            [p.text for p in event.content.parts if p.text]
+                        )
+
                 yield {
-                    "done": True,
-                    "type": "text",
+                    "agent": event.author,
+                    "type": response_type,
                     "content": final_response_content,
                     "function_name": None,
+                    "lastResponse": False,
                     "state": current_state,
                 }
 

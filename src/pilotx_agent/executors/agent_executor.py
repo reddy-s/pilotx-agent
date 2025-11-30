@@ -13,6 +13,7 @@ from a2a.types import (
     TaskStatusUpdateEvent,
     TaskStatus,
     DataPart,
+    Part
 )
 from a2a.utils import new_task, new_agent_text_message
 from google.adk.agents import SequentialAgent, ParallelAgent, LoopAgent
@@ -69,43 +70,46 @@ class PilotXAgentExecutor(AgentExecutor):
                     prompt=query, user_id=user_id, session_id=task.context_id
                 ):
                     if event["content"]:
-                        if event["done"]:
-                            message = new_agent_text_message(
-                                text=event["content"],
-                                context_id=task.context_id,
-                                task_id=task.id,
-                            )
-                            state = event["state"] if "state" in event else {}
-                            state = {
-                                **state,
-                                "user_id": user_id,
-                                "user_name": user_name,
+                        if event["lastResponse"]:
+                            if event["type"] == "text":
+                                message = new_agent_text_message(
+                                    text=event["content"],
+                                    context_id=task.context_id,
+                                    task_id=task.id,
+                                )
+                            elif event["type"] == "json":
+                                message = Message(
+                                    role=Role.agent,
+                                    parts=[Part(root=DataPart(data=event["content"]))],
+                                    message_id=str(uuid.uuid4()),
+                                    task_id=task.id,
+                                    context_id=task.context_id,
+                                )
+                            metadata = {
+                                "type": event["type"],
+                                "finished": False,
+                                "lastResponse": event["lastResponse"],
+                                "agent": event["agent"],
                             }
                             await updater.update_status(
-                                TaskState.completed, message=message, metadata=state
+                                TaskState.working, message=message, metadata=metadata
                             )
-                            break
                         else:
                             # This is a partial/streaming response
                             metadata = _struct_pb2.Struct()
                             metadata.update(
                                 {
                                     "type": event["type"],
+                                    "lastResponse": event["lastResponse"],
+                                    "finished": False,
+                                    "agent": event["agent"],
                                     "function_name": event["function_name"],
-                                    "user_id": user_id,
-                                    "user_name": user_name,
                                 }
                             )
-
-                            parts = [TextPart(text=event["content"])]
-
-                            # Handle function calls, adds the args to the parts
-                            if event["type"] == "function_call":
-                                parts.append(DataPart(data=event["args"]))
-
-                            # Handle function responses, adds the tool response to the parts
-                            if event["type"] == "function_response":
-                                parts.append(DataPart(data=event["tool_response"]))
+                            if event["type"] == "json":
+                                parts = [DataPart(data=event["content"])]
+                            else:
+                                parts = [TextPart(text=event["content"])]
 
                             await event_queue.enqueue_event(
                                 TaskStatusUpdateEvent(
@@ -125,6 +129,26 @@ class PilotXAgentExecutor(AgentExecutor):
                                     task_id=task.id,
                                 )
                             )
+
+                message = new_agent_text_message(
+                    text="done",
+                    context_id=task.context_id,
+                    task_id=task.id,
+                )
+                state = await self.agent.runner.get_current_session_state(
+                    app_name=self.agent.runner.runner.app_name, user_id=user_id, session_id=task.context_id
+                )
+                state = {
+                    **state,
+                    "type": "status",
+                    "lastResponse": True,
+                    "finished": True,
+                    "agent": "Orchestrator",
+                }
+                await updater.update_status(
+                    TaskState.completed, message=message, metadata=state
+                )
+
         except UnauthorisedRequest as uar:
             await updater.update_status(
                 TaskState.auth_required,

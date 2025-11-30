@@ -11,9 +11,9 @@ class InsightsWorkflowAgent(AbstractSequentialAgent):
             name="InsightsWorkflow",
             description="Agent to manage the workflow of translating a user's question into actionable business insights.",
             sub_agents=[
-                DataAnalyst().agent,
-                BusinessAnalyst().agent,
-                FAQProposer().agent,
+                DataAnalyst(session_type=session_type).agent,
+                BusinessAnalyst(session_type=session_type).agent,
+                FAQProposer(session_type=session_type).agent,
             ],
             session_type=session_type,
         )
