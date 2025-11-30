@@ -87,7 +87,7 @@ class PilotXAgentExecutor(AgentExecutor):
                                 )
                             metadata = {
                                 "type": event["type"],
-                                "finished": False,
+                                "turnComplete": False,
                                 "lastResponse": event["lastResponse"],
                                 "agent": event["agent"],
                             }
@@ -101,7 +101,7 @@ class PilotXAgentExecutor(AgentExecutor):
                                 {
                                     "type": event["type"],
                                     "lastResponse": event["lastResponse"],
-                                    "finished": False,
+                                    "turnComplete": False,
                                     "agent": event["agent"],
                                     "function_name": event["function_name"],
                                 }
@@ -142,7 +142,7 @@ class PilotXAgentExecutor(AgentExecutor):
                     **state,
                     "type": "status",
                     "lastResponse": True,
-                    "finished": True,
+                    "turnComplete": True,
                     "agent": "Orchestrator",
                 }
                 await updater.update_status(
