@@ -12,7 +12,7 @@ from initialize import initialize
 
 initialize()
 
-from src.pilotx_agent.a2a import make_pilotx_a2a_server
+from pilotx_agent.a2a import make_pilotx_a2a_server
 
 
 def make_adk_web_server() -> uvicorn.Server:
