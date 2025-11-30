@@ -1,4 +1,8 @@
 import logging
+from typing import Optional
+
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.models import LlmResponse
 
 from .abstract import AbstractAgent
 from .entities import AgentConfig, AgentType, SessionType
@@ -20,3 +24,9 @@ class Orchestrator(AbstractAgent):
             session_type=session_type,
             sub_agents=[InsightsWorkflowAgent(session_type=session_type).agent],
         )
+
+    def _after_model_callback(self, callback_context: CallbackContext, llm_response: LlmResponse) -> Optional[
+        LlmResponse]:
+        if not hasattr(callback_context.state, "turn"):
+            callback_context.state["turn"] = 0
+        callback_context.state["turn"] += 1
