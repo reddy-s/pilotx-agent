@@ -15,7 +15,7 @@ from .entities import (
     AgentType,
     SessionType,
     ToolResponse,
-    DataAnalystResponse,
+    VisualizationResponse,
 )
 from .plugins import JailbreakDetector
 from .utils import TokenUsage, MlflowTracedSyncTool
@@ -42,7 +42,7 @@ class DataAnalyst(AbstractAgent):
             tools=[*traced_tools],
             session_type=session_type,
             plugins=[JailbreakDetector()],
-            output_schema=DataAnalystResponse,
+            output_schema=VisualizationResponse,
         )
 
     def _after_tool_callback(
