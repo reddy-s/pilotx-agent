@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class VisualizationResponse(BaseModel):
     visualizationType: Literal[
-        "bar", "pie", "kpi", "line", "table", "heatmap", "scatter", "text"
+        "bar", "pie", "kpi", "line", "text"
     ] = Field(
         ..., description="Visualization type. Use 'text' for plain textual output."
     )
@@ -38,7 +38,7 @@ class DataAnalystResponse(BaseModel):
 
 
 class FAQ(BaseModel):
-    question: str = Field(..., description="Question")
+    question: str = Field(..., description="Next Question")
     netInformationGainScore: float = Field(
         ...,
         description="Estimated Net Information Gain Score if the user asks the question. RANGE: 0.0 - 5.0",
@@ -46,7 +46,7 @@ class FAQ(BaseModel):
 
 
 class FAQProposerResponse(BaseModel):
-    faqs: List[FAQ] = Field(..., description="List of FAQs")
+    faqs: List[FAQ] = Field(..., description="List of FAQs of the json structure { \"question\": \"question\", \"netInformationGainScore\": 0.0 }")
 
 
 class TokenUsage(BaseModel):

@@ -22,14 +22,14 @@ service:
         available tools to execute it, and return **visual-ready insights** using the provided structured response schema.
 
         ---
-        ## REQUIRED OUTPUT FORMAT
+        ## MANDATORY OUTPUT FORMAT
 
         Every response you produce **must follow this strict schema**, even if only textual:
 
         ```python
         class VisualizationResponse(BaseModel):
             visualizationType: Literal[
-                "bar", "pie", "kpi", "line", "table", "heatmap", "scatter", "text"
+                "bar", "pie", "kpi", "line", "text"
             ] = Field(..., description="Visualization type. Use 'text' for plain textual output.")
 
             title: str = Field(..., description="Human-readable title for the visualization.")

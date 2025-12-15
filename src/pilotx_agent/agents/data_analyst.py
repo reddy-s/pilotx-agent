@@ -55,6 +55,4 @@ class DataAnalyst(AbstractAgent):
         logger.info(
             f"DataAnalyst: after_tool_callback invoked with tool_response: {tool_response}"
         )
-        # TODO: Structure the Output
-        # return json.loads(tool_response)
         return tool_response

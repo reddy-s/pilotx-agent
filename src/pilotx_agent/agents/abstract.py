@@ -29,6 +29,13 @@ from google.adk.tools.tool_context import ToolContext
 from google.genai.types import Content, Part
 from mlflow.entities import SpanType
 from pydantic import BaseModel
+from pydantic import ValidationError
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
 
 from .entities import AgentConfig, ContentRoles, SessionType, AgentType
 from ..storage import FirestoreSessionService
@@ -94,6 +101,12 @@ class AgentRunner:
             plugins=plugins,
         )
 
+    @retry(
+        retry=retry_if_exception_type(ValidationError),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=0.1, max=1),
+        reraise=True,
+    )
     async def stream(
         self, prompt: str, user_id: str, session_id: str
     ) -> AsyncGenerator[dict[str, Any], None]:
