@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "firebase-admin>=7.1.0",
     "a2a-sdk[grpc,sql]",
-    "google-adk>=1.18.0",
+    "google-adk>=1.21.0",
     "litellm>=1.79.3",
     "tavily-python>=0.7.12",
     "tenacity>=9.1.2",
